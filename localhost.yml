@@ -1,0 +1,80 @@
+- hosts: localhost
+  tasks:
+  - name: install curl
+    sudo: yes
+    apt: name=curl state=present
+  - name: install git
+    sudo: yes
+    apt: name=git state=present
+  - name: install ubuntu-restricted-extras
+    sudo: yes
+    apt: name=ubuntu-restricted-extras state=present
+  - name: install libdvd
+    sudo: yes
+    apt: name=libdvd-pkg state=present
+  - name: install vim
+    sudo: yes
+    apt: name=vim state=present
+  - name: install terminator
+    sudo: yes
+    apt: name=terminator state=present
+  - name: install zsh
+    apt: name=zsh state=present
+  - name: install oh-my-zsh
+    shell: sh -c "$(wget https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh -O -)"
+  - name: change standard shell
+    shell: chsh -s /bin/zsh
+  - name: install powerline-fonts
+    apt: name=fonts-powerline state=present
+  - name: install chromium
+    block:
+      - apt: name=chromium-browser state=present
+      - apt: name=chromium-browser-l10n state=present
+      - apt: name=chromium-codecs-ffmpeg state=present
+  - name: install firefox
+    sudo: yes
+    apt: name=firefox state=present
+  - name: install thunderbird
+    sudo: yes
+    apt: name=thunderbird state=present
+  - name: install ubuntu-make
+    block: 
+      - apt_repository: repo=ppa:ubuntu-desktop/ubuntu-make state=present
+      - apt: name=ubuntu-make update_cache=yes
+  - name: download mattermost
+    get_url:
+      url: "https://releases.mattermost.com/desktop/3.7.1/mattermost-desktop-3.7.1-linux-amd64.deb"
+      dest: "/home/asc/Downloads/mattermost-desktop-3.7.1-linux-amd64.deb"
+  - name: install mattermost
+    sudo: yes
+    apt: 
+      deb: "/home/asc/Downloads/mattermost-desktop-3.7.1-linux-amd64.deb"
+  - name: install pip
+    sudo: yes
+    apt: name=python-pip state=present
+  - name: install pexpect
+    sudo: yes
+    pip: name=pexpect
+  - name: install firefox-dev from umake
+    sudo: yes
+    expect:
+      command: umake web firefox-dev
+      responses: 
+        "Choose installation path:": "/home/asc/.local/share/umake/web/firefox-dev"
+        "Choose language:" : "en-US"
+        "reinstall it anyway?": "n"
+  - name: install htop
+    sudo: yes
+    apt: name=htop state=present
+  - name: install ag
+    sudo: yes
+    apt: name=silversearcher-ag state=present
+  - name: add repository numix
+    apt_repository: repo=ppa:numix/ppa state=present
+  - name: install numix
+    apt: name={{item}} state=installed update_cache=yes
+    with_items: 
+      - numix-gtk-theme
+      - numix-icon-theme-circle
+  - name: install unity-tweak-tool
+    apt: name=unity-tweak-tool state=installed
