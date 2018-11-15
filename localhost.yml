@@ -1,4 +1,12 @@
 - hosts: localhost
+  vars_prompt:
+  - name: "githubuser"
+    prompt: "Enter your github username"
+    private: no
+  - name: "githubpassword"
+    prompt: "Enter your github password"
+    private: yes
+
   tasks:
   - name: install curl
     sudo: yes
@@ -6,12 +14,24 @@
   - name: install git
     sudo: yes
     apt: name=git state=present
-  - name: install ubuntu-restricted-extras
+
+  - name: install pip
     sudo: yes
-    apt: name=ubuntu-restricted-extras state=present
-  - name: install libdvd
+    apt: name=python-pip state=present
+  - name: install pexpect
     sudo: yes
-    apt: name=libdvd-pkg state=present
+    pip: name=pexpect
+  - name: install python3
+    sudo: yes
+    apt: name=python3 state=present
+  - name: install python3-pip
+    sudo: yes
+    apt: name=python3-pip state=present
+  - name: install pip2 neovim
+    shell: pip2 install neovim
+  - name: install pip3 neovim
+    shell: pip3 install neovim
+
   - name: install vim
     sudo: yes
     apt: name=vim state=present
@@ -19,62 +39,84 @@
     sudo: yes
     apt: name=terminator state=present
   - name: install zsh
+    sudo: yes
     apt: name=zsh state=present
   - name: install oh-my-zsh
     shell: sh -c "$(wget https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh -O -)"
   - name: change standard shell
+    sudo: yes
     shell: chsh -s /bin/zsh
-  - name: install powerline-fonts
-    apt: name=fonts-powerline state=present
-  - name: install chromium
-    block:
-      - apt: name=chromium-browser state=present
-      - apt: name=chromium-browser-l10n state=present
-      - apt: name=chromium-codecs-ffmpeg state=present
-  - name: install firefox
-    sudo: yes
-    apt: name=firefox state=present
-  - name: install thunderbird
-    sudo: yes
-    apt: name=thunderbird state=present
-  - name: install ubuntu-make
-    block: 
-      - apt_repository: repo=ppa:ubuntu-desktop/ubuntu-make state=present
-      - apt: name=ubuntu-make update_cache=yes
-  - name: download mattermost
-    get_url:
-      url: "https://releases.mattermost.com/desktop/3.7.1/mattermost-desktop-3.7.1-linux-amd64.deb"
-      dest: "/home/asc/Downloads/mattermost-desktop-3.7.1-linux-amd64.deb"
-  - name: install mattermost
-    sudo: yes
-    apt: 
-      deb: "/home/asc/Downloads/mattermost-desktop-3.7.1-linux-amd64.deb"
-  - name: install pip
-    sudo: yes
-    apt: name=python-pip state=present
-  - name: install pexpect
-    sudo: yes
-    pip: name=pexpect
-  - name: install firefox-dev from umake
-    sudo: yes
-    expect:
-      command: umake web firefox-dev
-      responses: 
-        "Choose installation path:": "/home/asc/.local/share/umake/web/firefox-dev"
-        "Choose language:" : "en-US"
-        "reinstall it anyway?": "n"
   - name: install htop
     sudo: yes
     apt: name=htop state=present
   - name: install ag
     sudo: yes
     apt: name=silversearcher-ag state=present
+  - name: install neovim
+    sudo: yes
+    apt: name=neovim state=present
+  - name: download dein (plugin-manager)
+    get_url:
+      url: https://raw.githubusercontent.com/Shougo/dein.vim/master/bin/installer.sh
+      dest: installer.sh
+  - name: install dein (plugin-manager)
+    shell: sh ./installer.sh ~/.cache/dein
+  - name: chown /home/asc/.chache/dein
+    file: dest=/home/asc/.cache/dein owner=asc group=asc mode="u=rwX,g=rX,o=rX" recurse=yes
+  - name: pull nvim config
+    git: repo=https://{{ githubuser }}:{{ githubpassword }}@github.com/chooselife22/nvim_files.git dest=~/.config/nvim
+  - name: chown /home/asc/.config/nvim
+    file: dest=/home/asc/.config/nvim owner=asc group=asc mode="u=rwX,g=rX,o=rX" recurse=yes
+
+  - name: install chromium
+    sudo: yes
+    block:
+      - apt: name=chromium-browser state=present
+      - apt: name=chromium-browser-l10n state=present
+      - apt: name=chromium-codecs-ffmpeg state=present
+  - name: install firefox-developer
+    sudo: yes
+    block:
+      - apt_repository: repo=ppa:ubuntu-mozilla-daily/firefox-aurora state=present
+      - apt: name=firefox state=present update_cache=yes
+  - name: install thunderbird
+    sudo: yes
+    apt: name=thunderbird state=present
+  # - name: install ubuntu-make
+  # - sudo: yes
+  # - block:
+  # -   - apt_repository: repo=ppa:lyzardking/ubuntu-make state=present
+  # -   - apt: name=ubuntu-make update_cache=yes
+  - name: download mattermost
+    get_url:
+      url: "https://releases.mattermost.com/desktop/3.7.1/mattermost-desktop-3.7.1-linux-amd64.deb"
+      dest: "/home/asc/Downloads/mattermost-desktop-3.7.1-linux-amd64.deb"
+  - name: install mattermost
+    sudo: yes
+    apt:
+      deb: "/home/asc/Downloads/mattermost-desktop-3.7.1-linux-amd64.deb"
+  # - name: install firefox-dev from umake
+  #   sudo: yes
+  #   expect:
+  #     command: umake web firefox-dev
+  #     responses:
+  #       "Choose installation path:": "/home/asc/.local/share/umake/web/firefox-dev"
+  #       "Choose language:" : "en-US"
+  #       "reinstall it anyway?": "n"
+
+  - name: install ubuntu-restricted-extras
+    sudo: yes
+    apt: name=ubuntu-restricted-extras state=present
+  - name: install libdvd
+    sudo: yes
+    apt: name=libdvd-pkg state=present
+  - name: install powerline-fonts
+    sudo: yes
+    apt: name=fonts-powerline state=present
   - name: add repository numix
     apt_repository: repo=ppa:numix/ppa state=present
   - name: install numix
     apt: name={{item}} state=installed update_cache=yes
-    with_items: 
+    with_items:
       - numix-gtk-theme
       - numix-icon-theme-circle
-  - name: install unity-tweak-tool
-    apt: name=unity-tweak-tool state=installed
